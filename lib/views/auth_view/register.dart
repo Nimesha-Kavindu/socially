@@ -1,6 +1,6 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
 import 'package:socially/widgets/reusable/custom_input.dart';
 
@@ -19,9 +19,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
-  final TextEditingController _profileImageController = TextEditingController();
 
   File? _imageFile;
+
+  //Pick an image from gallery or camera
+  Future<void> _pickImage(ImageSource source) async {
+    final pickedFile = await ImagePicker().pickImage(source: source);
+    if (pickedFile != null) {
+      setState(() {
+        _imageFile = File(pickedFile.path);
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -61,7 +70,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             left: 80,
                             child: IconButton(
                               onPressed: () {
-                                // Implement image picker functionality here
+                                showModalBottomSheet(
+                                  context: context,
+                                  builder: (_) {
+                                    return SafeArea(
+                                      child: Wrap(
+                                        children: [
+                                          ListTile(
+                                            leading: Icon(Icons.photo_library),
+                                            title: Text('Choose from Gallery'),
+                                            onTap: () async {
+                                              Navigator.of(context).pop();
+                                              await _pickImage(ImageSource.gallery);
+                                            },
+                                          ),
+                                          ListTile(
+                                            leading: Icon(Icons.camera_alt),
+                                            title: Text('Take a Photo'),
+                                            onTap: () async {
+                                              Navigator.of(context).pop();
+                                              await _pickImage(ImageSource.camera);
+                                            },
+                                          ),
+                                        ],
+                                      ),
+                                    );
+                                  },
+                                );
                               },
                               icon: Icon(Icons.add_a_photo),
                             ),
