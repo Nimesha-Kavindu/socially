@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:socially/firebase_options.dart';
+import 'package:socially/views/responsive/moblie_layout.dart';
+import 'package:socially/views/responsive/responsive_layout.dart';
+import 'package:socially/views/responsive/web_layout.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -16,7 +19,10 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      home: Scaffold(),
+      home: ResponsiveScreenLayout(
+        mobileScreenLayout: MobileScreenLayout(),
+        webScreenLayout: WebSceenLayout(),
+      ),
     );
   }
 }
