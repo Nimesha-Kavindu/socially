@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:socially/views/auth_view/register.dart';
 import 'package:socially/views/responsive/moblie_layout.dart';
 import 'package:socially/views/responsive/responsive_layout.dart';
 import 'package:socially/views/responsive/web_layout.dart';
 
 class RouterClass{
   final router = GoRouter(
-    initialLocation: "/",
+    initialLocation: "/register",
     errorBuilder: (context, state) {
       return Scaffold(
         body: Center(
@@ -22,6 +23,9 @@ class RouterClass{
           webScreenLayout: WebSceenLayout(),
         ),
       ),
+      GoRoute(path: "/register", builder: (context, state){
+        return RegisterScreen();
+      })
     ],
   );
 }
