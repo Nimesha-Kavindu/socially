@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
 import 'package:socially/widgets/reusable/custom_input.dart';
@@ -199,10 +200,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             ),
                           ),
                           validator: (value) {
-                            if (value == null || value.trim().isEmpty)
+                            if (value == null || value.trim().isEmpty) {
                               return 'Please confirm your password';
-                            if (value != _passwordController.text)
+                            }
+                            if (value != _passwordController.text) {
                               return 'Passwords do not match';
+                            }
                             return null;
                           },
                         ),
@@ -210,7 +213,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       SizedBox(height: 30),
                       ReusableButton(text: "SignIn", width: 350, onPressed: () {}),
                       SizedBox(height: 20),
-                      TextButton(onPressed: (){}, child: const Text(
+                      TextButton(onPressed: (){
+                        GoRouter.of(context).go("/login");
+                      }, child: const Text(
                         "Already have an account? Sign In",
                         style: TextStyle(
                           color: Color.fromARGB(255, 218, 218, 218),

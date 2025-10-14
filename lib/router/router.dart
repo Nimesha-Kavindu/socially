@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:socially/views/auth_view/login.dart';
 import 'package:socially/views/auth_view/register.dart';
 import 'package:socially/views/responsive/moblie_layout.dart';
 import 'package:socially/views/responsive/responsive_layout.dart';
@@ -23,9 +24,12 @@ class RouterClass{
           webScreenLayout: WebSceenLayout(),
         ),
       ),
-      GoRoute(path: "/register", builder: (context, state){
+      GoRoute(path: "/register",name: "register", builder: (context, state){
         return RegisterScreen();
-      })
+      }),
+      GoRoute(path: "/login", name: "login", builder: (context, state){
+        return LoginScreen();
+      }),
     ],
   );
 }
