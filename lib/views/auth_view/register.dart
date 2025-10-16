@@ -4,7 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:socially/widgets/models/user_model.dart';
 import 'package:socially/services/users/user_service.dart';
-import 'package:socially/services/users/user_storage.dart';
+import 'package:socially/services/cloudinary_service.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
 import 'package:socially/widgets/reusable/custom_input.dart';
 
@@ -41,13 +41,21 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Sign up with email and password
   Future<void> _createUser(BuildContext context) async {
     try {
-      //store the user image in storage and get the download url
+      //store the user image in Cloudinary storage and get the download url
       if (_imageFile != null) {
-        final imageUrl = await UserProfileStorageService().uploadImage(
-          profileImage: _imageFile!,
-          userEmail: _emailController.text,
+        print('📤 Uploading profile image to Cloudinary...');
+        final imageUrl = await CloudinaryService().uploadImage(
+          _imageFile!,
+          'profile-images', // Folder in Cloudinary
         );
-        _imageUrlController.text = imageUrl;
+        
+        if (imageUrl.isNotEmpty) {
+          _imageUrlController.text = imageUrl;
+          print('✅ Image uploaded successfully');
+        } else {
+          print('⚠️  Image upload failed, proceeding without profile image');
+          // Continue registration even if image upload fails
+        }
       }
 
       //save user to firestore

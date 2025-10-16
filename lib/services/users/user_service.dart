@@ -9,9 +9,6 @@ class UserService {
   final CollectionReference _usersCollection =
       FirebaseFirestore.instance.collection('users');
 
-  final CollectionReference _feedCollection =
-      FirebaseFirestore.instance.collection('feed');
-
   // Save the user in the Firestore database
   Future<void> saveUser(UserModel user) async {
     try {
@@ -28,14 +25,19 @@ class UserService {
         // Create a new user document in Firestore with the user ID as the document ID
         final userRef = _usersCollection.doc(userId);
 
-        // Create a user map with the userId field
+        // Create a user map with all user data
         final Map<String, dynamic> userMap = {
+          'userId': userId,
+          'username': user.username,
           'email': user.email,
+          'jobTitle': user.jobTitle,
+          'profileImageUrl': user.profileImageUrl,
+          'password': user.password,
           'createdAt': Timestamp.now(),
+          'updatedAt': Timestamp.now(),
           'followersCount': 0,
           'followingCount': 0,
         };
-        userMap['userId'] = userId;
 
         // Set the user data in Firestore
         await userRef.set(userMap);

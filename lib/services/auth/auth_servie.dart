@@ -128,14 +128,15 @@ class AuthService {
         // Prepare user data
         final userData = {
           'userId': user.uid,
-          'name': user.displayName ?? 'No Name',
+          'username': user.displayName ?? 'No Name',
           'email': user.email ?? 'No Email',
-          'jobTitle': 'jobTitle',
-          'imageUrl': user.photoURL ?? '',
+          'jobTitle': 'Not specified',
+          'profileImageUrl': user.photoURL ?? '',
           'createdAt': Timestamp.fromDate(DateTime.now()),
           'updatedAt': Timestamp.fromDate(DateTime.now()),
           'password': '', // Password is not needed for Google sign-in
-          'followers': 0,
+          'followersCount': 0,
+          'followingCount': 0,
         };
 
         // Save user to Firestore
