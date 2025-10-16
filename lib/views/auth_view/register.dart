@@ -2,34 +2,85 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:socially/widgets/models/user_model.dart';
+import 'package:socially/services/users/user_service.dart';
+import 'package:socially/services/users/user_storage.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
 import 'package:socially/widgets/reusable/custom_input.dart';
 
 class RegisterScreen extends StatefulWidget {
-  const RegisterScreen({super.key});
+  RegisterScreen({super.key});
 
   @override
-  State<RegisterScreen> createState() => _RegisterScreenState();
+  _RegisterScreenState createState() => _RegisterScreenState();
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  final formKey = GlobalKey<FormState>();
+  final _formKey = GlobalKey<FormState>();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _jobTitleController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _confirmPasswordController =
       TextEditingController();
+  final TextEditingController _imageUrlController = TextEditingController();
 
   File? _imageFile;
 
-  //Pick an image from gallery or camera
+  // Pick an image from the gallery or camera
   Future<void> _pickImage(ImageSource source) async {
-    final pickedFile = await ImagePicker().pickImage(source: source);
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: source);
     if (pickedFile != null) {
       setState(() {
         _imageFile = File(pickedFile.path);
       });
+    }
+  }
+
+  // Sign up with email and password
+  Future<void> _createUser(BuildContext context) async {
+    try {
+      //store the user image in storage and get the download url
+      if (_imageFile != null) {
+        final imageUrl = await UserProfileStorageService().uploadImage(
+          profileImage: _imageFile!,
+          userEmail: _emailController.text,
+        );
+        _imageUrlController.text = imageUrl;
+      }
+
+      //save user to firestore
+      UserService().saveUser(
+        UserModel(
+          userId: "",
+          username: _nameController.text,
+          email: _emailController.text,
+          jobTitle: _jobTitleController.text,
+          profileImageUrl: _imageUrlController.text,
+          createdAt: DateTime.now(),
+          updatedAt: DateTime.now(),
+          password: _passwordController.text,
+          followers: 0,
+        ),
+      );
+
+      //show snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('User created successfully'),
+        ),
+      );
+
+      GoRouter.of(context).go('/main-screen');
+    } catch (e) {
+      print('Error signing up with email and password: $e');
+      //show snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error signing up with email and password: $e'),
+        ),
+      );
     }
   }
 
@@ -38,190 +89,139 @@ class _RegisterScreenState extends State<RegisterScreen> {
     return Scaffold(
       body: SingleChildScrollView(
         child: Padding(
-          padding: EdgeInsetsGeometry.all(16),
+          padding: const EdgeInsets.all(16.0),
           child: Center(
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: 60),
-                const Padding(
-                  padding: EdgeInsets.only(left: 100),
-                  child: Image(image: AssetImage("assets/logo.png")),
+                const SizedBox(height: 40),
+                const Image(
+                  image: AssetImage('assets/logo.png'),
+                  height: 70,
                 ),
-                SizedBox(height: 20),
+                SizedBox(height: MediaQuery.of(context).size.height * 0.06),
                 Form(
-                  key: formKey,
+                  key: _formKey,
                   child: Column(
                     children: [
                       Stack(
                         children: [
                           _imageFile != null
                               ? CircleAvatar(
-                                  radius: 60,
-                                  backgroundColor: Colors.grey,
+                                  radius: 64,
                                   backgroundImage: FileImage(_imageFile!),
+                                  backgroundColor: Colors.purple,
                                 )
-                              : CircleAvatar(
-                                  radius: 60,
+                              : const CircleAvatar(
+                                  radius: 64,
                                   backgroundImage: NetworkImage(
-                                    "https://i.stack.imgur.com/l60Hf.png",
-                                  ),
+                                      'https://i.stack.imgur.com/l60Hf.png'),
+                                  backgroundColor: Colors.purple,
                                 ),
                           Positioned(
                             bottom: -10,
                             left: 80,
                             child: IconButton(
-                              onPressed: () {
-                                showModalBottomSheet(
-                                  context: context,
-                                  builder: (_) {
-                                    return SafeArea(
-                                      child: Wrap(
-                                        children: [
-                                          ListTile(
-                                            leading: Icon(Icons.photo_library),
-                                            title: Text('Choose from Gallery'),
-                                            onTap: () async {
-                                              Navigator.of(context).pop();
-                                              await _pickImage(ImageSource.gallery);
-                                            },
-                                          ),
-                                          ListTile(
-                                            leading: Icon(Icons.camera_alt),
-                                            title: Text('Take a Photo'),
-                                            onTap: () async {
-                                              Navigator.of(context).pop();
-                                              await _pickImage(ImageSource.camera);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    );
-                                  },
-                                );
-                              },
-                              icon: Icon(Icons.add_a_photo),
+                              onPressed: () => _pickImage(ImageSource.gallery),
+                              icon: const Icon(Icons.add_a_photo),
                             ),
                           ),
                         ],
                       ),
-                      SizedBox(height: 30),
-                      SizedBox(
-                        width: 350,
-                        child: ReusableInput(
-                          controller: _nameController,
-                          hintText: "Name",
-                          icon: Icons.person,
-                          obsecureText: false,
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableInput(
+                        controller: _nameController,
+                        hintText: 'Name',
+                        icon: Icons.person,
+                        obsecureText: false,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your name';
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        width: 350,
-                        child: TextFormField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          decoration: InputDecoration(
-                            hintText: "Email",
-                            prefixIcon: Icon(Icons.email),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 12,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty)
-                              return 'Please enter your email';
-                            final emailRegex = RegExp(
-                              r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$',
-                            );
-                            if (!emailRegex.hasMatch(value.trim()))
-                              return 'Please enter a valid email';
-                            return null;
-                          },
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableInput(
+                        controller: _emailController,
+                        hintText: 'Email',
+                        icon: Icons.email,
+                        obsecureText: false,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your email';
+                          }
+                          if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                            return 'Please enter a valid email address';
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        width: 350,
-                        child: ReusableInput(
-                          controller: _jobTitleController,
-                          hintText: "Job Title",
-                          icon: Icons.work,
-                          obsecureText: false,
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableInput(
+                        controller: _jobTitleController,
+                        hintText: 'Job Title',
+                        icon: Icons.work,
+                        obsecureText: false,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your job title';
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        width: 350,
-                        child: TextFormField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          decoration: InputDecoration(
-                            hintText: "Password",
-                            prefixIcon: Icon(Icons.lock),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 12,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty)
-                              return 'Please enter your password';
-                            if (value.trim().length <= 6)
-                              return 'Password must be more than 6 characters';
-                            return null;
-                          },
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableInput(
+                        controller: _passwordController,
+                        hintText: 'Password',
+                        icon: Icons.lock,
+                        obsecureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your password';
+                          }
+                          if (value.length < 6) {
+                            return 'Password must be at least 6 characters long';
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(height: 20),
-                      SizedBox(
-                        width: 350,
-                        child: TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: true,
-                          autovalidateMode: AutovalidateMode.onUserInteraction,
-                          decoration: InputDecoration(
-                            hintText: "Confirm Password",
-                            prefixIcon: Icon(Icons.lock),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            contentPadding: EdgeInsets.symmetric(
-                              vertical: 14,
-                              horizontal: 12,
-                            ),
-                          ),
-                          validator: (value) {
-                            if (value == null || value.trim().isEmpty) {
-                              return 'Please confirm your password';
-                            }
-                            if (value != _passwordController.text) {
-                              return 'Passwords do not match';
-                            }
-                            return null;
-                          },
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableInput(
+                        controller: _confirmPasswordController,
+                        hintText: 'Confirm Password',
+                        icon: Icons.lock,
+                        obsecureText: true,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please confirm your password';
+                          }
+                          if (value != _passwordController.text) {
+                            return 'Passwords do not match';
+                          }
+                          return null;
+                        },
                       ),
-                      SizedBox(height: 30),
-                      ReusableButton(text: "SignIn", width: 350, onPressed: () {}),
-                      SizedBox(height: 20),
-                      TextButton(onPressed: (){
-                        GoRouter.of(context).go("/login");
-                      }, child: const Text(
-                        "Already have an account? Sign In",
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 218, 218, 218),
-                          fontSize: 16,
-                        ),
+                      const SizedBox(height: 16),
+                      ReusableButton(
+                        text: 'Sign Up',
+                        width: MediaQuery.of(context).size.width,
+                        onPressed: () async {
+                          if (_formKey.currentState?.validate() ?? false) {
+                            await _createUser(context);
+                          }
+                        },
                       ),
+                      const SizedBox(height: 16),
+                      TextButton(
+                        onPressed: () {
+                          // Navigate to login screen
+                          GoRouter.of(context).go('/login');
+                        },
+                        child: const Text(
+                          'Already have an account? Log in',
+                          style: TextStyle(color: Colors.white),
+                        ),
                       ),
                     ],
                   ),

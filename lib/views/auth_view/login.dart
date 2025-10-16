@@ -1,114 +1,163 @@
+// ignore_for_file: avoid_print
+
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:socially/services/auth/auth_servie.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
+import 'package:socially/widgets/reusable/custom_input.dart';
 
 class LoginScreen extends StatelessWidget {
-  const LoginScreen({super.key});
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _emailController = TextEditingController();
+  final TextEditingController _passwordController = TextEditingController();
+
+  // Sign in with Google
+  Future<void> _signInWithGoogle(BuildContext context) async {
+    try {
+      // Sign in with Google
+      await AuthService().signInWithGoogle();
+
+      GoRouter.of(context).go('/main-screen');
+    } catch (e) {
+      print('Error signing in with Google: $e');
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Error signing in with Google: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Sign in with email and password
+  Future<void> _signInWithEmailAndPassword(BuildContext context) async {
+    try {
+      // Sign in with email and password
+      await AuthService().signInWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+
+      GoRouter.of(context).go('/main-screen');
+    } catch (e) {
+      print('Error signing in with email and password: $e');
+      showDialog(
+        // ignore: use_build_context_synchronously
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text('Error signing in with email and password: $e'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
-    final _formKey = GlobalKey<FormState>();
-    final TextEditingController _emailController = TextEditingController();
-    final TextEditingController _passwordController = TextEditingController();
-
     return Scaffold(
-      body: Center(
-        child: SingleChildScrollView(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 20),
           child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Padding(
-                padding: const EdgeInsets.fromLTRB(120, 0, 0, 20),
-                child: Image.asset("assets/logo.png"),
+              const Image(
+                image: AssetImage('assets/logo.png'),
+                height: 70,
               ),
-            Form(
-              key: _formKey,
-              child: Column(
-                children: [
-                  SizedBox(
-                    width: 350,
-                    child: TextFormField(
+              SizedBox(height: MediaQuery.of(context).size.height * 0.06),
+              Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    ReusableInput(
                       controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      decoration: InputDecoration(
-                        hintText: "E-mail",
-                        prefixIcon: Icon(Icons.email),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 12,
-                        ),
-                      ),
+                      hintText: 'Email',
+                      icon: Icons.email,
+                      obsecureText: false,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (value == null || value.isEmpty) {
                           return 'Please enter your email';
                         }
-                        final emailRegex = RegExp(
-                          r'^[\w\-.]+@([\w-]+\.)+[\w-]{2,4}$',
-                        );
-                        if (!emailRegex.hasMatch(value.trim())) {
-                          return 'Please enter a valid email';
+                        if (!RegExp(r'\S+@\S+\.\S+').hasMatch(value)) {
+                          return 'Please enter a valid email address';
                         }
                         return null;
                       },
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  SizedBox(
-                    width: 350,
-                    child: TextFormField(
+                    const SizedBox(height: 16),
+                    ReusableInput(
                       controller: _passwordController,
-                      obscureText: true,
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      decoration: InputDecoration(
-                        hintText: "Password",
-                        prefixIcon: Icon(Icons.lock),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(
-                          vertical: 14,
-                          horizontal: 12,
-                        ),
-                      ),
+                      hintText: 'Password',
+                      icon: Icons.lock,
+                      obsecureText: true,
                       validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
+                        if (value == null || value.isEmpty) {
                           return 'Please enter your password';
                         }
-                        if (value.trim().length <= 6) {
-                          return 'Password must be more than 6 characters';
+                        if (value.length < 6) {
+                          return 'Password must be at least 6 characters long';
                         }
                         return null;
                       },
                     ),
-                  ),
-                  SizedBox(height: 20),
-                  ReusableButton(
-                    text: "Log In",
-                    width: 350,
-                    onPressed: () {
-                      //TODO: Implement login functionality
-                    },
-                  ),
-                  SizedBox(height: 10),
-                  TextButton(
-                    onPressed: () {
-                      GoRouter.of(context).go("/register");
-                    },
-                    child: const Text(
-                      "Don't have an account? Sign Up",
-                      style: TextStyle(fontSize: 16, color: Colors.white),
+                    const SizedBox(height: 24),
+                    ReusableButton(
+                      text: 'Log in',
+                      width: MediaQuery.of(context).size.width,
+                      onPressed: () async {
+                        if (_formKey.currentState?.validate() ?? false) {
+                          await _signInWithEmailAndPassword(context);
+                        }
+                      },
                     ),
-                  ),
-                  SizedBox(height: 10),
-                  ReusableButton(text: "Sign in with Google", width: 350, onPressed: (){})
-                ],
+                    const SizedBox(height: 30),
+                    Text(
+                      "Sign in with Google to access the app's features",
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: Colors.white.withOpacity(0.6),
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+                    // Google Sign-In Button
+                    ReusableButton(
+                      text: 'Sign in with Google',
+                      width: MediaQuery.of(context).size.width,
+                      onPressed: () => _signInWithGoogle(context),
+                    ),
+                    const SizedBox(height: 16),
+                    TextButton(
+                      onPressed: () {
+                        // Navigate to signup screen
+                        GoRouter.of(context).go('/register');
+                      },
+                      child: const Text(
+                        'Don\'t have an account? Sign up',
+                        style: TextStyle(
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-          ],
+            ],
           ),
         ),
       ),
