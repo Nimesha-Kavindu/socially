@@ -7,6 +7,7 @@ import 'package:socially/services/users/user_service.dart';
 import 'package:socially/services/cloudinary_service.dart';
 import 'package:socially/widgets/reusable/custom_button.dart';
 import 'package:socially/widgets/reusable/custom_input.dart';
+import 'package:socially/services/crypto/password_service.dart';
 
 class RegisterScreen extends StatefulWidget {
   RegisterScreen({super.key});
@@ -58,6 +59,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         }
       }
 
+      // Hash the password before saving
+      final hashedPassword =
+          PasswordService.hashPassword(_passwordController.text);
+
       //save user to firestore
       UserService().saveUser(
         UserModel(
@@ -68,7 +73,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
           profileImageUrl: _imageUrlController.text,
           createdAt: DateTime.now(),
           updatedAt: DateTime.now(),
-          password: _passwordController.text,
+          password: hashedPassword,
           followers: 0,
         ),
       );
