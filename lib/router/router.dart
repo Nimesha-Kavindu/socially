@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:socially/views/auth_view/email_verification_screen.dart';
 import 'package:socially/views/auth_view/login.dart';
 import 'package:socially/views/auth_view/register.dart';
 import 'package:socially/views/home_view/home_page.dart';
 
-class RouterClass{
+class RouterClass {
   final router = GoRouter(
     initialLocation: "/",
     errorBuilder: (context, state) {
@@ -43,18 +44,32 @@ class RouterClass{
               // Show loading spinner while checking auth
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Scaffold(
-                  body: Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  body: Center(child: CircularProgressIndicator()),
                 );
               }
-              
+
               // If user data exists, user is logged in
               if (snapshot.hasData) {
-                print('✅ User logged in: ${snapshot.data?.email}');
-                return const HomePage();
+                final user = snapshot.data!;
+                print('✅ User logged in: ${user.email}');
+
+                // 🔒 CHECK EMAIL VERIFICATION
+                if (!user.emailVerified) {
+                  // For email/password users only (not Google)
+                  final isEmailPasswordUser = user.providerData.any(
+                    (info) => info.providerId == 'password',
+                  );
+
+                  if (isEmailPasswordUser) {
+                    print('⚠️ Email not verified, blocking access');
+                    return const EmailVerificationScreen(); // ✅ BLOCKED!
+                  }
+                }
+
+                print('✅ Email verified, full access granted');
+                return const HomePage(); // ✅ ALLOWED
               }
-              
+
               // If no user data, user is logged out
               print('❌ No user logged in, showing login screen');
               return LoginScreen();
@@ -62,28 +77,28 @@ class RouterClass{
           );
         },
       ),
-      
+
       // Login page route
       GoRoute(
         path: '/login',
         name: 'login',
         builder: (context, state) => LoginScreen(),
       ),
-      
+
       // Register page route
       GoRoute(
         path: '/register',
         name: 'register',
         builder: (context, state) => RegisterScreen(),
       ),
-      
+
       // Home page route (after successful login)
       GoRoute(
         path: '/home',
         name: 'home',
         builder: (context, state) => const HomePage(),
       ),
-      
+
       // Alternative route name for consistency
       // Some of your code uses '/main-screen'
       GoRoute(
