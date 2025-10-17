@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:socially/utils/constants/colors.dart';
+import 'package:socially/views/main_screens/add_caption_screen.dart';
 import 'package:video_player/video_player.dart';
 import 'dart:io';
 
@@ -154,25 +156,74 @@ class _CreateScreenState extends State<CreateScreen> {
     required VoidCallback onPressed,
     bool isPrimary = true,
   }) {
-    return ElevatedButton.icon(
-      onPressed: onPressed,
-      icon: Icon(icon, color: isPrimary ? Colors.white : Colors.blue),
-      label: Text(
-        label,
-        style: TextStyle(
-          fontSize: 16,
-          color: isPrimary ? Colors.white : Colors.blue,
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: isPrimary ? Colors.blue : Colors.transparent,
-        side: isPrimary ? null : const BorderSide(color: Colors.blue),
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-        shape: RoundedRectangleBorder(
+    if (isPrimary) {
+      // Gallery button with gradient background
+      return Container(
+        decoration: BoxDecoration(
+          gradient: gradientColors,
           borderRadius: BorderRadius.circular(8),
         ),
-      ),
-    );
+        child: ElevatedButton.icon(
+          onPressed: onPressed,
+          icon: Icon(icon, color: Colors.white),
+          label: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Colors.white,
+            ),
+          ),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.transparent,
+            shadowColor: Colors.transparent,
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(8),
+            ),
+          ),
+        ),
+      );
+    } else {
+      // Camera button with gradient outline
+      return Container(
+        decoration: BoxDecoration(
+          gradient: gradientColors,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Container(
+          decoration: BoxDecoration(
+            color: Colors.black,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          margin: const EdgeInsets.all(2), // Creates the outline effect
+          child: ElevatedButton.icon(
+            onPressed: onPressed,
+            icon: ShaderMask(
+              shaderCallback: (bounds) => gradientColors.createShader(bounds),
+              child: Icon(icon, color: Colors.white),
+            ),
+            label: ShaderMask(
+              shaderCallback: (bounds) => gradientColors.createShader(bounds),
+              child: Text(
+                label,
+                style: const TextStyle(
+                  fontSize: 16,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.transparent,
+              shadowColor: Colors.transparent,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+          ),
+        ),
+      );
+    }
   }
 
   /// Media preview with actions (image or video)
@@ -253,58 +304,163 @@ class _CreateScreenState extends State<CreateScreen> {
     showDialog(
       context: context,
       builder: (BuildContext context) {
-        return AlertDialog(
-          backgroundColor: Colors.grey[900],
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: const Text(
-            'Choose Media Type',
-            style: TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w600,
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.grey[900],
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                width: 2,
+                color: Colors.transparent,
+              ),
             ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Photo option
-              ListTile(
-                leading: const Icon(Icons.photo, color: Colors.blue, size: 30),
-                title: const Text(
-                  'Photo',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
+            child: Stack(
+              children: [
+                // Gradient border effect
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: gradientColors,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Container(
+                    margin: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Title with gradient
+                        ShaderMask(
+                          shaderCallback: (bounds) =>
+                              gradientColors.createShader(bounds),
+                          child: const Text(
+                            'Choose Media Type',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+
+                        // Photo option
+                        _buildMediaOption(
+                          icon: Icons.photo,
+                          title: 'Photo',
+                          subtitle: source == ImageSource.gallery
+                              ? 'Choose from gallery'
+                              : 'Take a photo',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pickImage(source);
+                          },
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Divider with gradient
+                        Container(
+                          height: 1,
+                          decoration: BoxDecoration(
+                            gradient: gradientColors,
+                          ),
+                        ),
+
+                        const SizedBox(height: 12),
+
+                        // Video option
+                        _buildMediaOption(
+                          icon: Icons.videocam,
+                          title: 'Video',
+                          subtitle: source == ImageSource.gallery
+                              ? 'Choose from gallery'
+                              : 'Record a video',
+                          onTap: () {
+                            Navigator.pop(context);
+                            _pickVideo(source);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-                subtitle: Text(
-                  source == ImageSource.gallery ? 'Choose from gallery' : 'Take a photo',
-                  style: const TextStyle(color: Colors.white54, fontSize: 14),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickImage(source);
-                },
-              ),
-              const Divider(color: Colors.white24),
-              // Video option
-              ListTile(
-                leading: const Icon(Icons.videocam, color: Colors.blue, size: 30),
-                title: const Text(
-                  'Video',
-                  style: TextStyle(color: Colors.white, fontSize: 16),
-                ),
-                subtitle: Text(
-                  source == ImageSource.gallery ? 'Choose from gallery' : 'Record a video',
-                  style: const TextStyle(color: Colors.white54, fontSize: 14),
-                ),
-                onTap: () {
-                  Navigator.pop(context);
-                  _pickVideo(source);
-                },
-              ),
-            ],
+              ],
+            ),
           ),
         );
       },
+    );
+  }
+
+  /// Build media option tile for dialog
+  Widget _buildMediaOption({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.3),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            // Icon with gradient
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                gradient: gradientColors,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(icon, color: Colors.white, size: 28),
+            ),
+            const SizedBox(width: 16),
+            // Text
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    subtitle,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // Arrow icon
+            ShaderMask(
+              shaderCallback: (bounds) => gradientColors.createShader(bounds),
+              child: const Icon(
+                Icons.arrow_forward_ios,
+                color: Colors.white,
+                size: 18,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -481,21 +637,14 @@ class _CreateScreenState extends State<CreateScreen> {
 
   /// Go to caption screen (Next step)
   void _goToCaption() {
-    // TODO: Navigate to caption/details screen
-    // For now, show a message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Caption screen will be implemented next!'),
-        backgroundColor: Colors.blue,
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AddCaptionScreen(
+          mediaFile: _selectedMedia!,
+          isVideo: _isVideo,
+        ),
       ),
     );
-
-    // Example navigation (when you create AddCaptionScreen):
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(
-    //     builder: (context) => AddCaptionScreen(image: _selectedImage!),
-    //   ),
-    // );
   }
 }
