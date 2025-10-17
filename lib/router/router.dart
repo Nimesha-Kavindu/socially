@@ -4,7 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:socially/views/auth_view/email_verification_screen.dart';
 import 'package:socially/views/auth_view/login.dart';
 import 'package:socially/views/auth_view/register.dart';
-import 'package:socially/views/home_view/home_page.dart';
+import 'package:socially/views/main_screen.dart';
 
 class RouterClass {
   final router = GoRouter(
@@ -67,7 +67,7 @@ class RouterClass {
                 }
 
                 print('✅ Email verified, full access granted');
-                return const HomePage(); // ✅ ALLOWED
+                return const MainScreen(); // ✅ ALLOWED
               }
 
               // If no user data, user is logged out
@@ -96,7 +96,7 @@ class RouterClass {
       GoRoute(
         path: '/home',
         name: 'home',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const MainScreen(),
       ),
 
       // Alternative route name for consistency
@@ -104,7 +104,7 @@ class RouterClass {
       GoRoute(
         path: '/main-screen',
         name: 'main-screen',
-        builder: (context, state) => const HomePage(),
+        builder: (context, state) => const MainScreen(),
       ),
     ],
   );
