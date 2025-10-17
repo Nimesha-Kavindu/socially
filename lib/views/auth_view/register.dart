@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:socially/services/auth/auth_servie.dart';
 import 'package:socially/widgets/models/user_model.dart';
 import 'package:socially/services/users/user_service.dart';
 import 'package:socially/services/cloudinary_service.dart';
@@ -42,31 +43,44 @@ class _RegisterScreenState extends State<RegisterScreen> {
   // Sign up with email and password
   Future<void> _createUser(BuildContext context) async {
     try {
-      //store the user image in Cloudinary storage and get the download url
-      if (_imageFile != null) {
-        print('📤 Uploading profile image to Cloudinary...');
-        final imageUrl = await CloudinaryService().uploadImage(
-          _imageFile!,
-          'profile-images', // Folder in Cloudinary
-        );
-        
-        if (imageUrl.isNotEmpty) {
-          _imageUrlController.text = imageUrl;
-          print('✅ Image uploaded successfully');
-        } else {
-          print('⚠️  Image upload failed, proceeding without profile image');
-          // Continue registration even if image upload fails
-        }
+      // ✅ STEP 1: Create Firebase Auth user FIRST
+      print('🔵 Creating user with email: ${_emailController.text}');
+      final userCredential = await AuthService().createUserWithEmailAndPassword(
+        email: _emailController.text,
+        password: _passwordController.text,
+      );
+      print('✅ User created successfully with UID: ${userCredential.user!.uid}');
+
+      // ✅ STEP 2: Send verification email (NEW!)
+      print('📧 Sending verification email to: ${_emailController.text}');
+      try {
+        await userCredential.user!.sendEmailVerification();
+        print('✅ Verification email sent successfully!');
+        print('📬 Check your inbox: ${_emailController.text}');
+        print('⚠️  Also check spam/junk folder!');
+      } catch (emailError) {
+        print('❌ ERROR sending verification email: $emailError');
+        // Continue even if email fails
       }
 
+      //store the user image in Cloudinary storage and get the download url
+      if (_imageFile != null) {
+      final imageUrl = await CloudinaryService().uploadImage(
+        _imageFile!,
+        'profile-images',
+      );
+      _imageUrlController.text = imageUrl;
+    }
+
       // Hash the password before saving
-      final hashedPassword =
-          PasswordService.hashPassword(_passwordController.text);
+      final hashedPassword = PasswordService.hashPassword(
+        _passwordController.text,
+      );
 
       //save user to firestore
-      UserService().saveUser(
+      await UserService().saveUser(
         UserModel(
-          userId: "",
+          userId: userCredential.user!.uid, // ✅ Use Firebase UID
           username: _nameController.text,
           email: _emailController.text,
           jobTitle: _jobTitleController.text,
@@ -77,25 +91,68 @@ class _RegisterScreenState extends State<RegisterScreen> {
           followers: 0,
         ),
       );
+      
+      print('✅ User saved to Firestore with UID: ${userCredential.user!.uid}');
 
-      //show snackbar
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('User created successfully'),
+      if (mounted) {
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.email, color: Colors.blue),
+              SizedBox(width: 8),
+              Text('Check Your Email'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'We sent a verification email to:',
+                style: TextStyle(fontSize: 14),
+              ),
+              SizedBox(height: 8),
+              Text(
+                _emailController.text,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue,
+                ),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '📧 Check your inbox\n'
+                '📁 Check spam/junk folder\n'
+                '⏰ Email may take 1-2 minutes\n'
+                '🔗 Click the verification link',
+                style: TextStyle(fontSize: 13),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop(); // Close dialog
+                // StreamBuilder will show EmailVerificationScreen
+              },
+              child: const Text('OK, I\'ll Check My Email'),
+            ),
+          ],
         ),
       );
+    }
 
-      // No need to navigate! StreamBuilder will detect auth change
-      // and automatically show HomePage
+      // StreamBuilder will detect auth change and route to EmailVerificationScreen
       print('✅ Registration successful, StreamBuilder will handle navigation');
-
     } catch (e) {
       print('Error signing up with email and password: $e');
       //show snackbar
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error signing up with email and password: $e'),
-        ),
+        SnackBar(content: Text('Error signing up with email and password: $e')),
       );
     }
   }
@@ -111,10 +168,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const SizedBox(height: 40),
-                const Image(
-                  image: AssetImage('assets/logo.png'),
-                  height: 70,
-                ),
+                const Image(image: AssetImage('assets/logo.png'), height: 70),
                 SizedBox(height: MediaQuery.of(context).size.height * 0.06),
                 Form(
                   key: _formKey,
@@ -131,7 +185,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               : const CircleAvatar(
                                   radius: 64,
                                   backgroundImage: NetworkImage(
-                                      'https://i.stack.imgur.com/l60Hf.png'),
+                                    'https://i.stack.imgur.com/l60Hf.png',
+                                  ),
                                   backgroundColor: Colors.purple,
                                 ),
                           Positioned(
