@@ -58,7 +58,35 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   color: Colors.blue,
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              
+              // 4.5. Spam Warning
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.warning_amber_rounded, 
+                      color: Colors.orange.shade700, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Check your spam/junk folder if you don\'t see it!',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.orange.shade900,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
 
               // 5. Resend Button (we'll add next)
               // Add this to your Column children

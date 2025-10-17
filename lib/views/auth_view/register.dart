@@ -44,24 +44,13 @@ class _RegisterScreenState extends State<RegisterScreen> {
   Future<void> _createUser(BuildContext context) async {
     try {
       // ✅ STEP 1: Create Firebase Auth user FIRST
-      print('🔵 Creating user with email: ${_emailController.text}');
       final userCredential = await AuthService().createUserWithEmailAndPassword(
         email: _emailController.text,
         password: _passwordController.text,
       );
-      print('✅ User created successfully with UID: ${userCredential.user!.uid}');
 
       // ✅ STEP 2: Send verification email (NEW!)
-      print('📧 Sending verification email to: ${_emailController.text}');
-      try {
-        await userCredential.user!.sendEmailVerification();
-        print('✅ Verification email sent successfully!');
-        print('📬 Check your inbox: ${_emailController.text}');
-        print('⚠️  Also check spam/junk folder!');
-      } catch (emailError) {
-        print('❌ ERROR sending verification email: $emailError');
-        // Continue even if email fails
-      }
+      await userCredential.user!.sendEmailVerification();
 
       //store the user image in Cloudinary storage and get the download url
       if (_imageFile != null) {
@@ -124,12 +113,45 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 ),
               ),
               SizedBox(height: 16),
+              Container(
+                padding: EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.orange.shade200),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.warning_amber_rounded, 
+                          color: Colors.orange.shade700, size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Check Spam Folder!',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.orange.shade900,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'The email might be in your spam/junk folder.',
+                      style: TextStyle(fontSize: 12, color: Colors.orange.shade900),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 12),
               Text(
                 '📧 Check your inbox\n'
                 '📁 Check spam/junk folder\n'
-                '⏰ Email may take 1-2 minutes\n'
+                '⏰ May take 1-2 minutes\n'
                 '🔗 Click the verification link',
-                style: TextStyle(fontSize: 13),
+                style: TextStyle(fontSize: 13, height: 1.5),
               ),
             ],
           ),
@@ -139,7 +161,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 Navigator.of(context).pop(); // Close dialog
                 // StreamBuilder will show EmailVerificationScreen
               },
-              child: const Text('OK, I\'ll Check My Email'),
+              child: const Text('OK, Got It!'),
             ),
           ],
         ),
