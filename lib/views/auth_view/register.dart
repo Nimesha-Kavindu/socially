@@ -85,7 +85,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       );
 
-      GoRouter.of(context).go('/main-screen');
+      // No need to navigate! StreamBuilder will detect auth change
+      // and automatically show HomePage
+      print('✅ Registration successful, StreamBuilder will handle navigation');
+
     } catch (e) {
       print('Error signing up with email and password: $e');
       //show snackbar

@@ -17,8 +17,11 @@ class LoginScreen extends StatelessWidget {
     try {
       // Sign in with Google
       await AuthService().signInWithGoogle();
+      
+      // No need to navigate! StreamBuilder will detect auth change
+      // and automatically show HomePage
+      print('✅ Google sign-in successful, StreamBuilder will handle navigation');
 
-      GoRouter.of(context).go('/main-screen');
     } catch (e) {
       print('Error signing in with Google: $e');
       showDialog(
@@ -46,7 +49,10 @@ class LoginScreen extends StatelessWidget {
         password: _passwordController.text,
       );
 
-      GoRouter.of(context).go('/main-screen');
+      // No need to navigate! StreamBuilder will detect auth change
+      // and automatically show HomePage
+      print('✅ Email sign-in successful, StreamBuilder will handle navigation');
+
     } catch (e) {
       print('Error signing in with email and password: $e');
       showDialog(

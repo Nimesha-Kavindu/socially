@@ -31,27 +31,35 @@ class RouterClass{
       );
     },
     routes: [
-      // Root route - checks auth and redirects accordingly
+      // Root route - Auth Gate with StreamBuilder (Option B)
+      // Listens to Firebase Auth state changes in real-time
       GoRoute(
         path: '/',
-        redirect: (context, state) {
-          // Get current user from Firebase Auth
-          final user = FirebaseAuth.instance.currentUser;
-          
-          // If user is logged in, go to home
-          if (user != null) {
-            print('✅ User logged in, redirecting to /home');
-            return '/home';
-          }
-          
-          // If user is logged out, go to login
-          print('❌ No user logged in, redirecting to /login');
-          return '/login';
-        },
         builder: (context, state) {
-          // This builder is required but never shows
-          // because we always redirect
-          return const SizedBox.shrink();
+          return StreamBuilder<User?>(
+            // Listen to auth state changes continuously
+            stream: FirebaseAuth.instance.authStateChanges(),
+            builder: (context, snapshot) {
+              // Show loading spinner while checking auth
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              
+              // If user data exists, user is logged in
+              if (snapshot.hasData) {
+                print('✅ User logged in: ${snapshot.data?.email}');
+                return const HomePage();
+              }
+              
+              // If no user data, user is logged out
+              print('❌ No user logged in, showing login screen');
+              return LoginScreen();
+            },
+          );
         },
       ),
       
